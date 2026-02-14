@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>💘 Walentynka?</title>
+  <style>
+    :root { --bg1:#fff0f6; --bg2:#ffe3ec; --txt:#2b2b2b; }
+    * { box-sizing: border-box; }
+    body{
+      margin:0; min-height:100vh; display:grid; place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at 20% 20%, var(--bg1), var(--bg2));
+      color:var(--txt);
+      overflow:hidden;
+    }
+    .card{
+      width:min(720px, 92vw);
+      background: rgba(255,255,255,.75);
+      border:1px solid rgba(255,255,255,.8);
+      border-radius: 24px;
+      padding: 28px 22px;
+      box-shadow: 0 16px 50px rgba(0,0,0,.10);
+      backdrop-filter: blur(8px);
+      text-align:center;
+      position:relative;
+    }
+    h1{
+      margin: 6px 0 10px;
+      font-size: clamp(24px, 4vw, 40px);
+      line-height: 1.15;
+    }
+    .sub{
+      margin: 0 0 22px;
+      opacity:.8;
+      font-size: clamp(14px, 2.4vw, 18px);
+    }
+    .btns{
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+      margin-top: 8px;
+      position:relative;
+      min-height: 56px;
+    }
+    button{
+      border:0; cursor:pointer; user-select:none;
+      padding: 14px 22px;
+      font-size: 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      transition: transform .12s ease, filter .12s ease;
+    }
+    button:active{ transform: scale(.97); }
+    .yes{
+      background: linear-gradient(180deg, #ff4d8d, #ff2e73);
+      color:white;
+      box-shadow: 0 10px 25px rgba(255, 46, 115, .35);
+    }
+    .yes:hover{ filter: brightness(1.05); }
+    .no{
+      background: #fff;
+      color:#ff2e73;
+      border: 2px solid rgba(255, 46, 115, .25);
+    }
+    .no:hover{ filter: brightness(1.02); }
+
+    /* "Uciekający" NO */
+    .no.flee{
+      position:absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    .result{
+      margin-top: 18px;
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 800;
+      display:none;
+    }
+    .result small{
+      display:block;
+      font-weight:600;
+      opacity:.9;
+      margin-top:6px;
+      font-size: .75em;
+    }
+
+    /* Serduszka */
+    .heart{
+      position: fixed;
+      left: 0; top: 0;
+      pointer-events:none;
+      will-change: transform, opacity;
+      font-size: 18px;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,.15));
+      animation: fly var(--dur) ease-out forwards;
+    }
+    @keyframes fly{
+      0%   { transform: translate(var(--x0), var(--y0)) scale(var(--s0)) rotate(var(--r0)); opacity: 0; }
+      10%  { opacity: 1; }
+      100% { transform: translate(var(--x1), var(--y1)) scale(var(--s1)) rotate(var(--r1)); opacity: 0; }
+    }
+
+    /* Drobny "puls" na sukces */
+    .pulse{
+      animation: pulse .5s ease-in-out 2;
+    }
+    @keyframes pulse{
+      0%{ transform: scale(1); }
+      50%{ transform: scale(1.03); }
+      100%{ transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1>💘 Czy zostaniesz niunia moją walentynką?</h1>
+    <p class="sub">Wybierz mądrze… 😇</p>
+
+    <div class="btns" id="btns">
+      <button class="yes" id="yesBtn">Tak 💞</button>
+      <button class="no flee" id="noBtn">Nie 🙈</button>
+    </div>
+
+    <div class="result" id="result">
+      Hi hi hi no to wpadłaś 😏<br/>
+      I love you ❤️
+      <small>(spójrz, serduszka lecą!)</small>
+    </div>
+  </div>
+
+  <script>
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn  = document.getElementById('noBtn');
+    const result = document.getElementById('result');
+    const card   = document.getElementById('card');
+    const btns   = document.getElementById('btns');
+
+    // Uciekanie "Nie"
+    function moveNoButton() {
+      const area = btns.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+
+      const maxX = Math.max(0, area.width  - b.width);
+      const maxY = Math.max(0, area.height - b.height);
+
+      // losowo, ale zostaw trochę marginesu
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      noBtn.style.left = x + 'px';
+      noBtn.style.top  = y + 'px';
+      noBtn.style.transform = 'none';
+    }
+
+    // Przy pierwszym renderze ustaw w miarę sensownie
+    requestAnimationFrame(() => {
+      noBtn.style.left = '60%';
+      noBtn.style.top  = '0px';
+      noBtn.style.transform = 'translateX(-50%)';
+    });
+
+    // Zdarzenia uciekające
+    ['mouseenter','touchstart','click'].forEach(evt => {
+      noBtn.addEventListener(evt, (e) => {
+        e.preventDefault();
+        moveNoButton();
+      }, {passive:false});
+    });
+
+    // Eksplozja serduszek
+    function heartBomb(count = 120) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'heart';
+        el.textContent = Math.random() < 0.85 ? '❤️' : (Math.random() < 0.5 ? '💖' : '💘');
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist  = 120 + Math.random() * 520;
+
+        const x0 = (cx + (Math.random()*40-20));
+        const y0 = (cy + (Math.random()*40-20));
+        const x1 = x0 + Math.cos(angle) * dist;
+        const y1 = y0 + Math.sin(angle) * dist;
+
+        const s0 = 0.6 + Math.random() * 0.8;
+        const s1 = 0.6 + Math.random() * 1.4;
+
+        const r0 = (Math.random()*60-30) + 'deg';
+        const r1 = (Math.random()*720-360) + 'deg';
+
+        const dur = (900 + Math.random() * 1100) + 'ms';
+
+        el.style.setProperty('--x0', x0 + 'px');
+        el.style.setProperty('--y0', y0 + 'px');
+        el.style.setProperty('--x1', x1 + 'px');
+        el.style.setProperty('--y1', y1 + 'px');
+        el.style.setProperty('--s0', s0);
+        el.style.setProperty('--s1', s1);
+        el.style.setProperty('--r0', r0);
+        el.style.setProperty('--r1', r1);
+        el.style.setProperty('--dur', dur);
+
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+    }
+
+    // Klik w "Tak"
+    yesBtn.addEventListener('click', () => {
+      result.style.display = 'block';
+      card.classList.remove('pulse');
+      void card.offsetWidth; // restart animacji
+      card.classList.add('pulse');
+
+      // schowaj przyciski po sukcesie
+      yesBtn.disabled = true;
+      noBtn.style.display = 'none';
+
+      heartBomb(160);
+      // dorzuć drugą falę
+      setTimeout(() => heartBomb(120), 250);
+    });
+  </script>
+</body>
+</html>
